@@ -19,6 +19,8 @@
 library(maptools)
 library(ncdf4)
 library(raster)
+library(rgdal)
+library(broom)
 
 # set working directory
 setwd("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/raw/sst")    # indicate the path to the files
@@ -34,8 +36,8 @@ ls()
 rm(list = ls())
 
 # create a list of nc files and indicate its length
-(f <- list.files(".", pattern="*.L3m_MO_SST4_sst4_4km.nc",full.names=F))
-(lf<-length(f))
+f <- list.files(".", pattern="*.L3m_MO_SST4_sst4_4km.nc",full.names=F)
+lf<-length(f)
 
 # load shapefile
 shp.area <- readOGR(paste0("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/tmp"), layer ="vavau_eez_shape") 
@@ -72,7 +74,7 @@ for (i in 1:lf) {
  # proj4string(rst.data)=CRS("+init=EPSG:4326")
   
   # crop the raster to area extent
-  crp.data <- crop(rst.data,ext.area,snap="out")
+  crp.data <- crop(rst.data,ext.area,snap = "out")
   
   # set values higher than 45 to NA
 #  crp.data[crp.data>=45]<-NA
@@ -112,7 +114,7 @@ for (i in 1:lf) {
   rm(nc.data,dateini,dateend,datemean,year,month,rst.data,crp.data,crp.na,rst.mask,msk.data,sta.min,sta.mean,sta.median,sta.max,dat.output,fe)
 }
 
-rm(ext.area,i,lf,shp.area)
+rm(ext.area,i,lf)
 
 sst<-read.csv("MODISA_sst.csv")
 
@@ -124,34 +126,92 @@ all_sst<-brick(sstlist)
 
 names(all_sst)<-f
 
-test<-fortify(all_sst,format="long")
 
 # Write netCDF files
 writeRaster(all_sst,"2008_2017_monthly_SST.NetCDF",format="CDF",overwrite=TRUE,varname="SST",varunit="degrees C",zname="Time",zunit="month",NAflag=-9999)
 
-tidy_eez <- tidy(shp.area)
+#tonga_depth<-crop(tonga_depth,all_sst)
+#all_sst<-mask(all_sst,tonga_depth)
 
-temp_df<-shp.area@data
 
-temp_df$id <- seq(0,nrow(temp_df)-1)
+min_sst<-calc(all_sst,function(x){min(x,na.rm = TRUE)},filename = "min_sst.tif",overwrite = TRUE)
 
-eez_df<-merge(tidy_eez,temp_df,by="id")
+max_sst<-calc(all_sst,function(x){max(x, na.rm = TRUE)}, filename = "max_sst.tif",overwrite = TRUE)
 
-eez.land <- eez_df %>%
-  filter(hole == TRUE)
+average_sst<-calc(all_sst,function(x){mean(x, na.rm = TRUE)}, filename = "average_sst.tif", overwrite = TRUE)
 
-all<- +
-  tmap_mode("view")
-  tm_shape(test) +
-  tm_raster(showNA = FALSE, legend.show = TRUE, title = "SST",palette = "div") +
-  tm_legend(main.title.size = 2, main.title="SST", position = c("right","top")) +
-  tm_facets(as.layers=TRUE)
+
+# Create land mask and data frames for plotting for plotting
+
+tidy_eez<-tidy(shp.area)
+
+temp_df<-data.frame(shp.area@data)
+
+temp_df$id<-0
+
+EEZ_df<-merge(tidy_eez,temp_df,by="id")
+
+land<-EEZ_df %>%
+  filter(hole==TRUE)
+
+ min_sst_df<-as_data_frame(rasterToPoints(min_sst)) 
+ max_sst_df<-as_data_frame(rasterToPoints(max_sst)) 
+ avg_sst_df<-as_data_frame(rasterToPoints(average_sst)) 
+ 
+ #Plot
+ ggplot() +
+   geom_raster(data=min_sst_df,aes(x=x,y=y,fill = min_sst),title="Minimum SST from 2008-2017")+
+   scale_fill_continuous("SST (C)",low="darkblue",high="lightblue") +
+   geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 1) +
+   xlab("Longitude") +
+   ylab("Latitude") +
+   theme_bw() +
+  ggtitle("Minimum SST from 2008-2017")
+  ggsave()
+ 
+  
+  ggplot() +
+    geom_raster(data=max_sst_df,aes(x=x,y=y,fill = max_sst),title="Maximum SST from 2008-2017")+
+    scale_fill_continuous("SST (C)",low="yellow",high="darkred") +
+    geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 1) +
+    xlab("Longitude") +
+    ylab("Latitude") +
+    theme_bw() +
+    ggtitle("Maximum SST from 2008-2017")  
+  
+  ggplot() +
+    geom_raster(data=avg_sst_df,aes(x=x,y=y,fill = average_sst),title="Average SST from 2008-2017")+
+    scale_fill_continuous("SST (C)",low="yellow",high="darkred") +
+    geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 1) +
+    xlab("Longitude") +
+    ylab("Latitude") +
+    theme_bw() +
+    ggtitle("Average SST from 2008-2017")  
   
   
   
-  tm_shape(shp.area,is.master = TRUE) +
-  tm_fill(col="blue",showNA=TRUE,colorNA="blue",alpha = 0.3,title = "Vava'u") +
-  tm_borders(lwd = 1.2) 
+  
+  depth_df<-as_data_frame(rasterToPoints(tonga_depth))
+  
+  ggplot() +
+    geom_raster(data=depth_df,aes(x=x,y=y,fill = tonga_depth),title="Maximum SST from 2008-2017")+
+    scale_fill_continuous("SST (C)",low="yellow",high="darkred") +
+    geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 1) +
+    xlab("Longitude") +
+    ylab("Latitude") +
+    theme_bw() +
+    ggtitle("Maximum SST from 2008-2017")  
+  
+  
+ 
+  tm_shape(min_sst)+
+    tm_raster() +
+    tm_shape(land,is.master = TRUE) +
+    tm_fill(col="blue",title = "Vava'u") +
+    tm_borders(lwd = 1.2) +
+    tm_shape(min_sst)+
+    tm_raster() +
+    tm_shape(shp.area,is.master = TRUE) +
 
 raster_df<-as_data_frame(rasterToPoints(msk.data)) %>%
 purrr::set_names(c("long","lat","sst"))
