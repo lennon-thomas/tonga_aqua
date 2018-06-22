@@ -44,24 +44,60 @@ eez_name<-"Tongan Exclusive Economic Zone"
 tonga_eez<- eez[eez$GeoName %in% eez_name,]
 
 
-ext<-c( -174.2542, -173.79, -18.95, -18.56295) #-18.15
+ext<-c( -174.2542, -173.79, -18.95, -18.5) #-18.15
     
 vavau_eez<-crop(tonga_eez,ext)
 
 writeOGR(vavau_eez, dsn=paste0(boxdir,"/data/tmp"),driver="ESRI Shapefile", layer="vavau_eez_shape",overwrite = TRUE)
 
+vavau_eez<-readOGR(dsn=paste0(boxdir,"/data/tmp"), layer ="vavau_eez_shape")
+
 #data from https://dusk.geo.orst.edu/tonga/mgr/
-depth<-raster(paste0(boxdir,"/data/raw/map2mgr.grd"))
+#depth2<-raster(paste0(boxdir,"/data/raw/map2mgr.grd"))
+
+depth<-raster(paste0(boxdir,"/data/raw/gebco_depth.tif"))
 
 vav_depth<-crop(depth,ext)
 
-vav_depth<-raster::mask(vav_depth,vavau_eez)
+#vav_depth[vav_depth>=0]<-NA
 
-zero_value<-Which(vav_depth<0,cells=TRUE)
+#vav_depth<-raster::mask(vav_depth,vavau_eez)
 
-vav_depth[zero_value]<-0
+#zero_value<-Which(vav_depth>0,cells=TRUE)
+
+#vav_depth[zero_value]<-0
 
 writeRaster(vav_depth,paste0(boxdir,"/data/tmp/vav_depth.tif"),overwrite = TRUE)
+
+#Plot
+tidy_eez<-tidy(vavau_eez)
+
+temp_df<-data.frame(vavau_eez@data)
+
+temp_df$id<-0
+
+EEZ_df<-merge(tidy_eez,temp_df,by="id")
+
+land<-EEZ_df %>%
+  dplyr::filter(hole==TRUE)
+
+water<-EEZ_df %>%
+  dplyr::filter(hole==FALSE)
+
+
+depth_df<-as_data_frame(rasterToPoints(vav_depth)) %>%
+  mutate(depth2 = gebco_depth *-1)
+
+ggplot() +
+  geom_raster(data=depth_df,aes(x=x,y=y,fill = gebco_depth),title="Depth (m)")+
+  scale_fill_continuous("Depth (m)")+#,low="lightblue",high="navy") +
+  geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  theme_bw() +
+ 
+ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/depth.png")
+
 
 # data from http://datadownload.unep-wcmc.org
 coral<- readOGR(dsn = paste0(boxdir, "/data/raw/14_001_WCMC008_CoralReefs2010_v3/01_Data"),layer = "WCMC008_CoralReef2010_Py_v3")
@@ -72,10 +108,29 @@ tonga_coral_raster<-rasterize(tonga_coral,vav_depth,field=2,progress='text')
 
 tonga_coral_raster[is.na(tonga_coral_raster)]<-0
 
-tonga_coral_raster<-raster::mask(tonga_coral_raster,vav_depth,maskvalue=NA,inverse=FALSE,filename=paste(boxdir,"/data/tmp/tonga_coral_raster.tif",sep=""),overwrite=TRUE)
+writeRaster(tonga_coral_raster,paste0(boxdir,"/data/raw/vav_coral_raster.tif"))
 
 
-mangrove<-readOGR(dsn = paste0("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2016/Carib_aqua_16/Suitability/raw/mangroves/01_Data"),layer = "14_001_WCMC010_MangroveUSGS2011_v1_3")
+
+coral_df<-as_data_frame(rasterToPoints(tonga_coral_raster))
+
+writeRaster(tonga_coral_raster,paste0(boxdir,"/data/raw/vav_coral_raster.tif"))
+
+ggplot() +
+  geom_raster(data=coral_df,aes(x=x,y=y,fill = layer),show.legend = FALSE)+
+  scale_fill_continuous("Coral habitat", high="orange",low="lightblue") +
+  geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  theme_bw() +
+  ggtitle("Coral Reef Habitat")
+
+ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/coral.png")
+
+#tonga_coral_raster<-raster::mask(tonga_coral_raster,vav_depth,maskvalue=NA,inverse=FALSE,filename=paste(boxdir,"/data/tmp/tonga_coral_raster.tif",sep=""),overwrite=TRUE)
+
+
+mangrove<-readOGR(dsn = paste0(boxdir,"/data/raw/mangroves/01_Data"),layer = "14_001_WCMC010_MangroveUSGS2011_v1_3")
 
 tonga_mangrove<-crop(mangrove,ext)
 
@@ -85,19 +140,147 @@ tonga_mangrove_raster<-rasterize(tonga_mangrove,vav_depth,field=2)
 
 tonga_mangrove_raster[is.na(tonga_mangrove_raster)]<-0
 
-tonga_mangrove_raster<-raster::mask(tonga_mangrove_raster,vav_depth,maskvalue=NA,inverse=FALSE,filename=paste(boxdir,"/data/tmp/tonga_mangrove_raster.tif",sep=""),overwrite=TRUE)
+writeRaster(tonga_mangrove_raster,paste0(boxdir,"/data/raw/vav_mangrove_raster.tif"))
+
+mangrove_df<-as_data_frame(rasterToPoints(tonga_mangrove_raster))
+
+
+tidy_mangrove<-tidy(tonga_mangrove)
+
+temp_df<-data.frame(tonga_mangrove@data)
+
+temp_df$id<-0
+
+mangrove_df<-merge(tidy_mangrove,temp_df,by.x="id",by.y="OBJECTID")
+
+land<-EEZ_df %>%
+  filter(hole==TRUE)
+
+ggplot() +
+  geom_polygon(data=mangrove_df,aes(x=long, y=lat, group=group),fill="red",show.legend = FALSE)+
+#  scale_fill_continuous("Coral habitat", high="red",low="lightblue") +
+  geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  theme_bw() +
+  ggtitle("Mangrove Habitat")
+#tonga_mangrove_raster<-raster::mask(tonga_mangrove_raster,vav_depth,maskvalue=NA,inverse=FALSE,filename=paste(boxdir,"/data/tmp/tonga_mangrove_raster.tif",sep=""),overwrite=TRUE)
+ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/mangrove.png")
 
 
 # Habitat data from  Millennium Coral Reef Mapping Project,
 habitat<-readOGR(dsn = paste0(boxdir,"/data/raw/mill"),layer = "Tonga_v6")
 
-vav_habitat<-crop(habitat,ext)
+vav_habitat<-crop(habitat,vavau_eez)
 
-writeOGR(vav_habitat,dsn = paste0(boxdir,"/data/tmp"),driver="ESRI Shapefile",layer = "vav_habitat")
+writeOGR(vav_habitat,dsn = paste0(boxdir,"/data/tmp"),driver="ESRI Shapefile",layer = "vav_habitat",overwrite = TRUE)
 
 vav_habitat_df <- broom::tidy(vav_habitat, region = "L4_ATTRIB")
 
+temp_df<-data.frame(vav_habitat@data)
 
+temp_df$id<-0
+
+EEZ_df<-merge(tidy_eez,temp_df,by="id")
+
+
+ggplot() +
+  geom_polygon(data = water, aes(x=long, y=lat, group=group),fill =  "lightblue", colour = "black", size = 0.8) +
+  geom_polygon(data=vav_habitat_df,aes(x=long, y=lat, group=group, fill=id),show.legend = TRUE)+
+  scale_fill_discrete("Benthic habitat") +
+  geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  theme_bw() 
+
+ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/benthic_habitat.png")
+
+
+## Shiping
+
+ship<-raster(paste0(boxdir,"/data/raw/chart/chart-nz-82-tonga.tif"))
+
+#crs(ship)<-"+proj=moll +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +units=m +no_defs"
+
+#sp_ship<-projectRaster(ship,crs="+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
+
+vav_ship<-crop(ship,ext)
+
+
+# Salinity
+
+max_sal<-raster(paste0(boxdir,"/data/raw/Present.Surface.Salinity.Max.tif"))
+vav_max_sal<-crop(max_sal,ext)
+vav_max_sal<-resample(vav_max_sal, vav_depth,method="bilinear")
+writeRaster(vav_max_sal, filename=paste0(boxdir,'/data/tmp/max_salinity.tif'),overwrite=TRUE)
+
+max_sal_df<-as_data_frame(rasterToPoints(vav_max_sal))
+ggplot() +
+  geom_raster(data=max_sal_df,aes(x=x,y=y,fill = Present.Surface.Salinity.Max),show.legend = TRUE) +
+  scale_fill_continuous("Salinity (ppt)") +
+  geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  theme_bw() +
+  ggtitle("Max Salinity (ppt)")
+ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/max_salinity.png")
+
+min_sal<-raster(paste0(boxdir,"/data/raw/Present.Surface.Salinity.Min.tif"))
+vav_min_sal<-crop(min_sal,ext)
+vav_min_sal<-resample(vav_min_sal,vav_depth, method="bilinear")
+writeRaster(vav_min_sal, filename=paste0(boxdir,'/data/tmp/min_salinity.tif'),overwrite = TRUE)
+
+min_sal_df<-as_data_frame(rasterToPoints(vav_min_sal))
+
+ggplot() +
+  geom_raster(data=min_sal_df,aes(x=x,y=y,fill = Present.Surface.Salinity.Min),show.legend = TRUE) +
+  scale_fill_continuous("Salinity (ppt)") +
+  geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  theme_bw() +
+  ggtitle("Min Salinity (ppt)")
+ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/min_salinity.png")
+
+
+mean_sal<-raster(paste0(boxdir,"/data/raw/Present.Surface.Salinity.Mean.tif"))
+vav_mean_sal<-crop(mean_sal,ext)
+vav_mean_sal<-resample(vav_mean_sal,vav_depth, method="bilinear")
+writeRaster(vav_mean_sal, filename=paste0(boxdir,'/data/tmp/mean_salinity.tif'),overwrite=TRUE)
+
+avg_sal_df<-as_data_frame(rasterToPoints(vav_mean_sal))
+
+ggplot() +
+  geom_raster(data=avg_sal_df,aes(x=x,y=y,fill = Present.Surface.Salinity.Mean),show.legend = TRUE) +
+  scale_fill_continuous("Salinity (ppt)") +
+  geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  theme_bw() +
+  ggtitle("Average Salinity (ppt)")
+ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/min_salinity.png")
+
+
+#### Storm Datahttps://brycemecum.com/2014/02/18/working-with-netcdf-files-in-r/
+
+sp_storm<-nc_open(paste0(boxdir,"/data/raw/sp_storm.nc"))
+
+sp_storm<-brick(paste0(boxdir,"/data/raw/sp_storm.nc"))
+)
+
+lon <- ncvar_get(sp_storm, varid = "lon_wmo")
+lat <- ncvar_get(sp_storm, varid = "lat_wmo")
+time<-ncvar_get(sp_storm,varid="time_wmo")
+name <- ncvar_get(sp_storm, "name")
+wind<-ncvar_get(sp_storm,"wind_wmo")
+
+time_d <- as.Date(time, format="%j", origin=as.Date("1858-11-17"))
+time_years <- format(time_d, "%Y")
+time_months <- format(time_d, "%m")
+time_year_months <- format(time_d, "%Y-%m")
+
+head(time_d)
+time_d[103805]
 # Aquaculture areas -------------------------------------------------------
 
 aqua_df <- read.csv(paste0(boxdir,"/data/vav_aqua_areas.csv")) %>%

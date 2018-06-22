@@ -88,7 +88,7 @@ for (i in 1:lf) {
   rst.mask <- rasterize(shp.area,tonga_depth)
   
   # resample sst file to 2 1km2
-  res.data <- resample(crp.data,rst.mask)
+  res.data <- resample(crp.data,rst.mask,method="bilinear")
   
   # apply the mask to the raster with data
  # msk.data <- mask(x=res.dat,mask=rst.mask)
@@ -162,67 +162,35 @@ land<-EEZ_df %>%
  ggplot() +
    geom_raster(data=min_sst_df,aes(x=x,y=y,fill = min_sst),title="Minimum SST from 2008-2017")+
    scale_fill_continuous("SST (C)",low="darkblue",high="lightblue") +
-   geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 1) +
+   geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
    xlab("Longitude") +
    ylab("Latitude") +
    theme_bw() +
   ggtitle("Minimum SST from 2008-2017")
-  ggsave()
+  ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/min_sst.png")
  
   
   ggplot() +
     geom_raster(data=max_sst_df,aes(x=x,y=y,fill = max_sst),title="Maximum SST from 2008-2017")+
     scale_fill_continuous("SST (C)",low="yellow",high="darkred") +
-    geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 1) +
+    geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
     xlab("Longitude") +
     ylab("Latitude") +
     theme_bw() +
     ggtitle("Maximum SST from 2008-2017")  
+  ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/max_sst.png")
   
   ggplot() +
     geom_raster(data=avg_sst_df,aes(x=x,y=y,fill = average_sst),title="Average SST from 2008-2017")+
-    scale_fill_continuous("SST (C)",low="yellow",high="darkred") +
-    geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 1) +
+    #scale_fill_continuous("SST (C)",low="green",high="blue") +
+    scale_fill_viridis()+
+    geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
     xlab("Longitude") +
     ylab("Latitude") +
     theme_bw() +
     ggtitle("Average SST from 2008-2017")  
+  ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/average_sst.png")
   
   
   
   
-  depth_df<-as_data_frame(rasterToPoints(tonga_depth))
-  
-  ggplot() +
-    geom_raster(data=depth_df,aes(x=x,y=y,fill = tonga_depth),title="Maximum SST from 2008-2017")+
-    scale_fill_continuous("SST (C)",low="yellow",high="darkred") +
-    geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 1) +
-    xlab("Longitude") +
-    ylab("Latitude") +
-    theme_bw() +
-    ggtitle("Maximum SST from 2008-2017")  
-  
-  
- 
-  tm_shape(min_sst)+
-    tm_raster() +
-    tm_shape(land,is.master = TRUE) +
-    tm_fill(col="blue",title = "Vava'u") +
-    tm_borders(lwd = 1.2) +
-    tm_shape(min_sst)+
-    tm_raster() +
-    tm_shape(shp.area,is.master = TRUE) +
-
-raster_df<-as_data_frame(rasterToPoints(msk.data)) %>%
-purrr::set_names(c("long","lat","sst"))
-
-ggplot(gapminder)+
-  geom_raster(data=test, aes(x=x ,y=y, fill=value, frame = band)) +
- # facet_wrap(~band) +
-   geom_polygon(data = eez.land,aes(x = long,y = lat,group = group), fill =  "white", colour = "black", size = 0.5) +
-  theme(legend.position="none") +
-   theme_bw() +
-  xlab("Longitude") +
-  ylab("Latitude") 
-
-
