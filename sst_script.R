@@ -36,13 +36,13 @@ ls()
 rm(list = ls())
 
 # create a list of nc files and indicate its length
-f <- list.files(".", pattern="*.L3m_MO_SST4_sst4_4km.nc",full.names=F)
+f <- list.files(".", pattern="*.L3m_MO_SST_sst_4km.nc",full.names=F)
 lf<-length(f)
 
 # load shapefile
 shp.area <- readOGR(paste0("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/tmp"), layer ="vavau_eez_shape") 
 
-tonga_depth<-raster("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/tmp/tonga_depth.tif")
+tonga_depth<-raster("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/tmp/vav_depth.tif")
 
   #readShapePoly("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/tmp/eez_tonga_shape.shp") # indicate the name and location of the shapefile
 
@@ -50,7 +50,7 @@ tonga_depth<-raster("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018
 plot(shp.area)
 
 # get the spatial extent of the shapefile
-ext.area <- extent(shp.area)
+ext.area <- extent(tonga_depth)
 
 for (i in 1:lf) {
   # progress indicator
@@ -70,7 +70,7 @@ for (i in 1:lf) {
   nc_close(nc.data)
   
   # create a raster from nc file
-  rst.data <- raster(f[i],varname="sst4")
+  rst.data <- raster(f[i],varname="sst")
  # proj4string(rst.data)=CRS("+init=EPSG:4326")
   
   # crop the raster to area extent
@@ -160,35 +160,41 @@ land<-EEZ_df %>%
  
  #Plot
  ggplot() +
-   geom_raster(data=min_sst_df,aes(x=x,y=y,fill = min_sst),title="Minimum SST from 2008-2017")+
+   geom_raster(data=min_sst_df,aes(x=x,y=y,fill = min_sst))+
    scale_fill_continuous("SST (C)",low="darkblue",high="lightblue") +
    geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
    xlab("Longitude") +
    ylab("Latitude") +
    theme_bw() +
+   scale_x_continuous(expand = c(0,0)) +
+   scale_y_continuous(expand = c(0,0)) +
   ggtitle("Minimum SST from 2008-2017")
   ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/min_sst.png")
  
   
   ggplot() +
     geom_raster(data=max_sst_df,aes(x=x,y=y,fill = max_sst),title="Maximum SST from 2008-2017")+
-    scale_fill_continuous("SST (C)",low="yellow",high="darkred") +
+    scale_fill_continuous("SST (C)",low="darkblue",high="lightblue") +
     geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
     xlab("Longitude") +
     ylab("Latitude") +
     theme_bw() +
-    ggtitle("Maximum SST from 2008-2017")  
+    ggtitle("Maximum SST from 2008-2017") +
+    scale_x_continuous(expand = c(0,0)) +
+    scale_y_continuous(expand = c(0,0))
   ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/max_sst.png")
   
   ggplot() +
     geom_raster(data=avg_sst_df,aes(x=x,y=y,fill = average_sst),title="Average SST from 2008-2017")+
     #scale_fill_continuous("SST (C)",low="green",high="blue") +
-    scale_fill_viridis()+
+    scale_fill_continuous("SST (C)",low="darkblue",high="lightblue") +
     geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
     xlab("Longitude") +
     ylab("Latitude") +
     theme_bw() +
-    ggtitle("Average SST from 2008-2017")  
+    ggtitle("Average SST from 2008-2017")  +
+    scale_x_continuous(expand = c(0,0)) +
+    scale_y_continuous(expand = c(0,0))
   ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/average_sst.png")
   
   
