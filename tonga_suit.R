@@ -10,6 +10,7 @@ library(rgdal)
 library(sp)
 library(Hmisc)
 library(ncdf4)
+library(broom)
 
 
 boxdir<-'/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture'
@@ -84,6 +85,7 @@ vav_depth<-crop(depth,ext)
 
 writeRaster(vav_depth,paste0(boxdir,"/data/tmp/vav_depth.tif"),overwrite = TRUE)
 
+vav_depth<-raster(paste0(boxdir,"/data/tmp/vav_depth.tif"))
 #Plot
 
 
@@ -111,15 +113,16 @@ tonga_coral<-crop(coral,ext)
 
 tonga_coral_raster<-rasterize(tonga_coral,vav_depth,field=2,progress='text')
 
-tonga_coral_raster[is.na(tonga_coral_raster)]<-0
+#tonga_coral_raster[is.na(tonga_coral_raster)]<-0
 
 coral_df<-as_data_frame(rasterToPoints(tonga_coral_raster))
 
 writeRaster(tonga_coral_raster,paste0(boxdir,"/data/tmp/vav_coral_raster.tif"),overwrite = TRUE)
 
 ggplot() +
+  geom_polygon(data = water, aes(x=long, y=lat, group=group),fill =  "lightblue",alpha = 0.5, size = 0.8) +
   geom_raster(data=coral_df,aes(x=x,y=y,fill = layer),show.legend = FALSE) +
-  scale_fill_continuous("Coral habitat", high="orange",low="lightblue") +
+  scale_fill_continuous("Coral habitat", high="orange",low=NULL) +
  # geom_polygon(data = water,aes(x=long,y=lat,group=group),fill = "lightblue") +
   geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
  
@@ -189,7 +192,7 @@ vav_habitat_df<-merge(tidy_habitat,temp_df,by="id")
 
 
 ggplot() +
-  geom_polygon(data = water, aes(x=long, y=lat, group=group),fill =  "lightblue", colour = "black", size = 0.8) +
+  geom_polygon(data = water, aes(x=long, y=lat, group=group),fill =  "lightblue", alpha =0.5, size = 0.8) +
   geom_polygon(data=vav_habitat_df,aes(x=long, y=lat, group=group, fill=L4_ATTRIB),show.legend = TRUE)+
   scale_fill_viridis("Benthic habitat",discrete=TRUE) +
   geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
@@ -303,6 +306,8 @@ vav_storm_l<-crop(storm_shape,ext)
 #vav_storm_p<-crop(storm_points,ext)
 writeOGR(vav_storm_l,dsn=paste0(boxdir,"/data/tmp/storms"),driver="ESRI Shapefile",layer="vav_storms")
 
+vav_storm_l<-readOGR(dsn = paste0(boxdir,"/data/tmp/storms"), layer = "vav_storms")
+
 tidy_storml<-tidy(vav_storm_l)
 
 temp_df<-data.frame(vav_storm_l@data)
@@ -325,6 +330,7 @@ write.csv(storml_df,paste0(boxdir,"/data/tmp/storm.csv"))
 ggplot() +
 
  # scale_fill_continuous("Salinity (ppt)") +
+  geom_polygon(data = water, aes(x=long, y=lat, group=group),alpha= 0.5,fill =  "lightblue", colour = "black", size = 0.8) +
   geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
   geom_line(data=storml_df,aes(x=long,y=lat,size=max_wind,color=Name), lty="dashed")+#arrow=arrow(ends = c("last"))) +
   scale_color_discrete("Storm Name") +

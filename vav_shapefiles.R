@@ -98,20 +98,78 @@ base+
 
 
 #mangrove_use<-readOGR(dsn=boxdir,layer="Mangrove Use")
-whale<-readOGR(dsn=boxdir,layer="Mother_Calf_Habitat")
+whale<-readOGR(dsn=paste0(boxdir,"/data/VAV_Shapefiles"),layer="Mother_Calf_Habitat")
 whale_df<-tidy(whale)
 temp_df<-whale@data
 whale_df<-merge(whale_df,temp_df,by.x="id",by.y="Id")
 
-base+
+cr_base+
   geom_polygon(data=whale_df,aes(x=long,y=lat,group=group),fill="purple",alpha=0.5)
 
+ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/whale.png")
 
 
-ovaka<-readOGR(dsn=boxdir,layer="Ovaka SMA Boundary")
-pending_sma<-readOGR(dsn=boxdir,layer="Pending SMA")
-dive<-readOGR(dsn=boxdir,layer="Popular Dive Sites")
-rec<-readOGR(dsn=boxdir,layer="Recreation")
+ovaka<-readOGR(dsn=paste0(boxdir,"/data/VAV_Shapefiles"),layer="Ovaka SMA Boundary")
+ovaka_df<-tidy(ovaka) %>%
+  filter(id!=0 & id!=1)
+
+pending_sma<-readOGR(dsn=paste0(boxdir,"/data/VAV_Shapefiles"),layer="Pending SMA")
+pending_sma_df<-as_data_frame(pending_sma)
+
+
+cr_base+
+  geom_polygon(data=ovaka_df,aes(x=long,y=lat,group=group),color="red",fill=NA) +
+  geom_point(data=pending_sma_df,aes(x=coords.x1,y=coords.x2),color="red",size=3)
+
+ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/SMA.png")
+
+
+
+
+dive<-readOGR(dsn=paste0(boxdir,"/data/VAV_Shapefiles"),layer="Popular Dive Sites")
+dive_df<-as_data_frame(dive) %>%
+  mutate(Activity="Popular dive site") %>%
+  select(coords.x1,coords.x2,Activity)
+
+hotel<-readOGR(dsn=paste0(boxdir,"/data/VAV_Shapefiles"),layer="Resorts_and_hotels_Vavau")
+
+repro<-"+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0 "
+
+hotel<-spTransform(hotel,repro)
+
+hotel_df<-as_data_frame(hotel)%>%
+  mutate(Activity="Hotel") %>%
+  select(coords.x1,coords.x2,Activity)
+
+
+rec<-readOGR(dsn=paste0(boxdir,"/data/VAV_Shapefiles"),layer="Recreation")
+
+rec_df<-as_data_frame(rec) %>%
+  mutate(Activity="Recreation") %>%
+  select(coords.x1,coords.x2,Activity)
+
+ggsave()
+activity<-rbind(dive_df,hotel_df,rec_df)
+
+cr_base+
+  geom_point(data=activity,aes(x=coords.x1,y=coords.x2,shape=Activity,color=Activity),size=2.5)+
+  scale_shape_manual(name="",labels=c("Popular dive sites","Hotels","Recreation areas"),values=c(9,20,17)) +
+  scale_color_manual(name="",labels=c("Popular dive sites","Hotels","Recreation areas"),values=c("#F8766D","#7CAE00","#C77CFF"))
+
+ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/marine_activities.png")
+
+
+
+fishing<-readOGR(dsn=paste0(boxdir,"/data/VAV_Shapefiles"),layer="Community Fishing Areas")
+
+tidy_fishing<-tidy(fishing)
+
+cr_base +
+  geom_polygon(data=tidy_fishing,aes(x=long,y=lat,group=group),col="red",fill="red",alpha="0.5")
+  ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/fishing areas.png")
+
+
+
 res<-readOGR(dsn=boxdir,layer="residential area")
 hotel<-readOGR(dsn=boxdir,layer="Resorts_and_hotels_Vavau")
 seacuc<-readOGR(dsn=boxdir,layer="Sea cucumber")
@@ -124,6 +182,9 @@ temp_df<-mangrove@data
 mangrove_df<-merge(mangrove_df,temp_df)
 base+
   geom_polygon(data=mangrove_df,aes(x=long,y=lat,group=group),fill="green",alpha=0.5)
+
+
+
 
 
 water<-readOGR(dsn=boxdir,layer="Inland Water")
