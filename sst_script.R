@@ -21,6 +21,9 @@ library(ncdf4)
 library(raster)
 library(rgdal)
 library(broom)
+library(tidyr)
+library(ggplot2)
+library(ggpubr)
 
 # set working directory
 setwd("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/raw/sst")    # indicate the path to the files
@@ -50,7 +53,7 @@ tonga_depth<-raster("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018
 plot(shp.area)
 
 # get the spatial extent of the shapefile
-ext.area <- extent(tonga_depth)
+ext.area <-c( -174.2542, -173.79, -18.97, -18.5)
 
 for (i in 1:lf) {
   # progress indicator
@@ -134,11 +137,11 @@ writeRaster(all_sst,"2008_2017_monthly_SST.NetCDF",format="CDF",overwrite=TRUE,v
 #all_sst<-mask(all_sst,tonga_depth)
 
 
-min_sst<-calc(all_sst,function(x){min(x,na.rm = TRUE)},filename = "min_sst.tif",overwrite = TRUE)
+min_sst<-raster::calc(all_sst,function(x){min(x,na.rm = TRUE)},filename = "min_sst.tif")
 
-max_sst<-calc(all_sst,function(x){max(x, na.rm = TRUE)}, filename = "max_sst.tif",overwrite = TRUE)
+max_sst<-raster::calc(all_sst,function(x){max(x, na.rm = TRUE)}, filename = "max_sst.tif",overwrite = TRUE)
 
-average_sst<-calc(all_sst,function(x){mean(x, na.rm = TRUE)}, filename = "average_sst.tif", overwrite = TRUE)
+average_sst<-raster::calc(all_sst,function(x){mean(x, na.rm = TRUE)}, filename = "average_sst.tif", overwrite = TRUE)
 
 
 # Create land mask and data frames for plotting for plotting
@@ -154,52 +157,58 @@ EEZ_df<-merge(tidy_eez,temp_df,by="id")
 land<-EEZ_df %>%
   filter(hole==TRUE)
 
- min_sst_df<-as_data_frame(rasterToPoints(min_sst)) 
- max_sst_df<-as_data_frame(rasterToPoints(max_sst)) 
- avg_sst_df<-as_data_frame(rasterToPoints(average_sst)) 
+ min_sst_df<-dplyr::as_data_frame(rasterToPoints(min_sst)) 
+ max_sst_df<-dplyr::as_data_frame(rasterToPoints(max_sst)) 
+ avg_sst_df<-dplyr::as_data_frame(rasterToPoints(average_sst)) 
+ 
+ leg.lab<-xlab <- expression(paste('SST (',~degree,'C)',sep=''))
  
  #Plot
- ggplot() +
+ mm<-ggplot() +
    geom_raster(data=min_sst_df,aes(x=x,y=y,fill = min_sst))+
-   scale_fill_continuous("SST (C)",low="darkblue",high="lightblue") +
+   scale_fill_continuous(leg.lab,low="darkblue",high="lightblue") +
    geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
-   xlab("Longitude") +
+  xlab("") +
    ylab("Latitude") +
    theme_bw() +
    scale_x_continuous(expand = c(0,0)) +
    scale_y_continuous(expand = c(0,0)) +
    coord_fixed(1.03) +
-  ggtitle("Minimum SST from 2008-2017")
+  ggtitle("(a) Min") +
+  coord_fixed(1.03) 
   ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/min_sst.png")
  
   
-  ggplot() +
+  mx<-ggplot() +
     geom_raster(data=max_sst_df,aes(x=x,y=y,fill = max_sst),title="Maximum SST from 2008-2017")+
-    scale_fill_continuous("SST (C)",low="darkblue",high="lightblue") +
+    scale_fill_continuous(leg.lab,low="darkblue",high="lightblue") +
     geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
     xlab("Longitude") +
-    ylab("Latitude") +
+    ylab("") +
     theme_bw() +
-    ggtitle("Maximum SST from 2008-2017") +
+    ggtitle("(b) Max") +
     scale_x_continuous(expand = c(0,0)) +
     scale_y_continuous(expand = c(0,0)) +
     coord_fixed(1.03) 
   ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/max_sst.png")
   
-  ggplot() +
+  av<-ggplot() +
     geom_raster(data=avg_sst_df,aes(x=x,y=y,fill = average_sst),title="Average SST from 2008-2017")+
     #scale_fill_continuous("SST (C)",low="green",high="blue") +
-    scale_fill_continuous("SST (C)",low="darkblue",high="lightblue") +
+    scale_fill_continuous(leg.lab,low="darkblue",high="lightblue") +
     geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
-    xlab("Longitude") +
-    ylab("Latitude") +
+    xlab("") +
+    ylab("") +
     theme_bw() +
-    ggtitle("Average SST from 2008-2017")  +
+    ggtitle("(c) Mean")  +
     scale_x_continuous(expand = c(0,0)) +
     scale_y_continuous(expand = c(0,0)) +
     coord_fixed(1.03) 
   ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/average_sst.png")
   
   
+  ggarrange(mm,mx,av,ncol=3,nrow=1,common.legend = FALSE,legend="top",
+            label.x=0,label.y=0)
   
+  ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/all_sst.png")
   

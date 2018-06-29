@@ -90,12 +90,12 @@ vav_depth<-raster(paste0(boxdir,"/data/tmp/vav_depth.tif"))
 
 
 
-depth_df<-as_data_frame(rasterToPoints(vav_depth)) 
+depth_df<-dplyr::as_data_frame(rasterToPoints(vav_depth)) 
 
 ggplot() +
   geom_raster(data=depth_df,aes(x=x,y=y,fill = vav_depth),title="Depth (m)")+
   scale_fill_continuous("Depth (m)")+#,low="lightblue",high="navy") +
-  geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) + 
+  geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.5) + 
   xlab("Longitude") +
   ylab("Latitude") +
   theme_bw() +
@@ -194,10 +194,10 @@ vav_habitat_df<-merge(tidy_habitat,temp_df,by="id")
 
 
 ggplot() +
-  geom_polygon(data = water, aes(x=long, y=lat, group=group),fill =  "lightblue", alpha =0.5, size = 0.8) +
+  geom_polygon(data = water, aes(x=long, y=lat, group=group),fill =  "lightblue", alpha =0.5, size = 0.5) +
   geom_polygon(data=vav_habitat_df,aes(x=long, y=lat, group=group, fill=L4_ATTRIB),show.legend = TRUE)+
   scale_fill_viridis("Benthic habitat",discrete=TRUE) +
-  geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
+  geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.5) +
   xlab("Longitude") +
   ylab("Latitude") +
   theme_bw() +
@@ -206,6 +206,38 @@ ggplot() +
   coord_fixed(1.03) 
 
 ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/benthic_habitat.png")
+
+
+# Mangrove ----------------------------------------------------------------
+
+
+mangrove<-readOGR(dsn=boxdir,layer="/data/raw/Vavau magrove subset")
+mangrove_df<-tidy(mangrove)
+temp_df<-mangrove@data
+mangrove_df<-merge(mangrove_df,temp_df)
+base+
+  geom_polygon(data=mangrove_df,aes(x=long,y=lat,group=group),fill="green",alpha=0.5)
+
+
+# Current -----------------------------------------------------------------
+
+#u_current<-brick(paste0(boxdir,"/data/raw/oscar_vel2017.nc"),varname="u")
+#extent(u_current)<-extent(depth)
+#u_current<-crop(u_current,ext)
+#crs(u_current)<-repro
+ext<-c(-174.254200, -173.790000,  -18.970000 , -18.500000)
+v_current<-brick(paste0(boxdir,"/data/raw/oscar_vel2017.nc"),varname="v")
+extent(v_current)<-extent(depth)
+v_current<-projectExtent(v_current,depth)
+extent(v_current)<-extent(depth)
+v_current<-crop(v_current,ext)
+max_u<-raster::calc(u_current,function(x){max(x)})
+
+#um_current<-brick(paste0(boxdir,"/data/raw/oscar_vel2017.nc"),varname="um")
+
+#vm_current<-brick(paste0(boxdir,"/data/raw/oscar_vel2017.nc"),varname="vm")
+
+
 
 
 ## Shiping
@@ -242,17 +274,17 @@ vav_max_sal<-crop(max_sal,ext,snap="out")
 vav_max_sal<-resample(vav_max_sal, vav_depth,method="bilinear")
 writeRaster(vav_max_sal, filename=paste0(boxdir,'/data/tmp/max_salinity.tif'),overwrite=TRUE)
 
-max_sal_df<-as_data_frame(rasterToPoints(vav_max_sal))
-ggplot() +
+max_sal_df<-dplyr::as_data_frame(rasterToPoints(vav_max_sal))
+max.sal<-ggplot() +
   geom_raster(data=max_sal_df,aes(x=x,y=y,fill = Present.Surface.Salinity.Max),show.legend = TRUE) +
   scale_fill_gradientn("Salinity (ppt)",colors= rev(terrain.colors(10))) +
   geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
   xlab("Longitude") +
-  ylab("Latitude") +
+  ylab("") +
   theme_bw() +
   scale_x_continuous(expand = c(0,0)) +
   scale_y_continuous(expand = c(0,0)) +
-  ggtitle("Max Salinity (ppt)") +
+  ggtitle("(b) Max") +
   scale_x_continuous(expand = c(0,0)) +
   scale_y_continuous(expand = c(0,0)) +
   coord_fixed(1.03) 
@@ -264,16 +296,16 @@ vav_min_sal<-crop(min_sal,ext,snap="out")
 vav_min_sal<-resample(vav_min_sal,vav_depth, method="bilinear")
 writeRaster(vav_min_sal, filename=paste0(boxdir,'/data/tmp/min_salinity.tif'),overwrite = TRUE)
 
-min_sal_df<-as_data_frame(rasterToPoints(vav_min_sal))
+min_sal_df<-dplyr::as_data_frame(rasterToPoints(vav_min_sal))
 
-ggplot() +
+mi.sal<-ggplot() +
   geom_raster(data=min_sal_df,aes(x=x,y=y,fill = Present.Surface.Salinity.Min),show.legend = TRUE) +
   scale_fill_gradientn("Salinity (ppt)",colors= rev(terrain.colors(10)))+
   geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
-  xlab("Longitude") +
+  xlab("") +
   ylab("Latitude") +
   theme_bw() +
-  ggtitle("Min Salinity (ppt)") +
+  ggtitle("(b) Min") +
   scale_x_continuous(expand = c(0,0)) +
   scale_y_continuous(expand = c(0,0)) +
   coord_fixed(1.03) 
@@ -286,22 +318,25 @@ vav_mean_sal<-crop(mean_sal,ext,snap="out")
 vav_mean_sal<-resample(vav_mean_sal,vav_depth, method="bilinear")
 writeRaster(vav_mean_sal, filename=paste0(boxdir,'/data/tmp/mean_salinity.tif'),overwrite=TRUE)
 
-avg_sal_df<-as_data_frame(rasterToPoints(vav_mean_sal))
+avg_sal_df<-dplyr::as_data_frame(rasterToPoints(vav_mean_sal))
 
-ggplot() +
+mean.sal<-ggplot() +
   geom_raster(data=avg_sal_df,aes(x=x,y=y,fill = Present.Surface.Salinity.Mean),show.legend = TRUE) +
   scale_fill_gradientn("Salinity (ppt)",colors= rev(terrain.colors(10))) +
   geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
-  xlab("Longitude") +
-  ylab("Latitude") +
+  xlab("") +
+  ylab("") +
   theme_bw() +
   scale_x_continuous(expand = c(0,0)) +
   scale_y_continuous(expand = c(0,0)) +
-  ggtitle("Average Salinity (ppt)") +
+  ggtitle("(c) Mean") +
   coord_fixed(1.03) 
 ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/mean_salinity.png")
 
 
+ggarrange(mi.sal,max.sal,mean.sal,ncol=3,nrow=1,common.legend = FALSE,legend="top",
+          label.x=0,label.y=0)
+ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/all_salinity.png")
 #### Storm Datahttps://brycemecum.com/2014/02/18/working-with-netcdf-files-in-r/
 
 storm_shape<-readOGR(paste0(boxdir,"/data/raw/storms"),layer="Basin.SP.ibtracs_all_lines.v03r10")
@@ -338,13 +373,14 @@ write.csv(storml_df,paste0(boxdir,"/data/tmp/storm.csv"))
 ggplot() +
 
  # scale_fill_continuous("Salinity (ppt)") +
-  geom_polygon(data = water, aes(x=long, y=lat, group=group),alpha= 0.5,fill =  "lightblue", colour = "black", size = 0.8) +
-  geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
+  geom_polygon(data = water, aes(x=long, y=lat, group=group),alpha= 0.5,fill =  "lightblue", colour = "black", size = 0.5) +
+  geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.5) +
   geom_line(data=storml_df,aes(x=long,y=lat,size=max_wind,color=Name), lty="dashed")+#arrow=arrow(ends = c("last"))) +
   scale_color_discrete("Storm Name") +
   scale_size_continuous("Average Wind Speed (kt)",range=c(0,2)) +
  # geom_point(data=stormp_df,aes(x=coords.x1,y=coords.x2,color=Name),size=2) +
   ylab("Latitude") +
+  xlab("Longitude") +
   theme_bw() +
   scale_x_continuous(expand = c(0,0)) +
   scale_y_continuous(expand = c(0,0)) +
@@ -458,11 +494,26 @@ aqua_labels<-aqua_df %>%
  dplyr:: group_by(id) %>%
   dplyr::top_n(1,wt=long)
 
+ovaka<-readOGR(dsn=paste0(boxdir,"/data/VAV_Shapefiles"),layer="Ovaka SMA Boundary")
+ovaka_df<-tidy(ovaka) %>%
+  filter(id!=0 & id!=1)
+
+pending_sma<-readOGR(dsn=paste0(boxdir,"/data/VAV_Shapefiles"),layer="Pending SMA")
+pending_sma_df<-as_data_frame(pending_sma)
+
+
+#cr_base+
+ 
+
+aqua_sma<-
 ggplot() +
   geom_polygon(data=water,aes(x=long,y=lat,group=group),fill="lightblue",alpha=0.5) +
   geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
   geom_polygon(data=aqua_df,aes(x=long,y=lat,group=group),colour="red",fill="navy",alpha=0.8) +
- # geom_text(data=aqua_labels,aes(x=long,y=lat,label=id),hjust=-1,vjust=-.5)+
+  geom_polygon(data=ovaka_df,aes(x=long,y=lat,group=group),color="red",fill=NA) +
+  geom_point(data=pending_sma_df,aes(x=coords.x1,y=coords.x2),color="red",size=3) +
+
+  # geom_text(data=aqua_labels,aes(x=long,y=lat,label=id),hjust=-1,vjust=-.5)+
   ylab("Latitude") +
   xlab("Longitude") +
   theme_bw() +
@@ -571,9 +622,38 @@ tonga_mpa_raster<-resample(tonga_mpa_raster,tonga_depth,progress='text',filename
 
 
 
+# mangrove ----------------------------------------------------------------
+
+mangrove<-readOGR(dsn=paste0(boxdir,"/data/VAV_Shapefiles"),layer="Vavau magrove subset")
+buf_mangrove<-gBuffer(mangrove,width=250,byid = TRUE)
+t_mangrove<-spTransform(buf_mangrove,repro)
+final_mangrove<-crop(t_mangrove,vav_depth)
+
+
+writeOGR(final_mangrove,dsn=paste0(boxdir,"/data/tmp"),driver="ESRI Shapefile",layer='mangrove_shp',overwrite_layer = TRUE)
+
+mangrove_df<-tidy(final_mangrove)
+temp_df<-mangrove@data
+temp_df$id<-row.names(temp_df)
+mangrove_df<-merge(mangrove_df,temp_df)
 
 
 
+ggplot() +
+  geom_polygon(data=water,aes(x=long,y=lat,group=group),fill="lightblue",alpha=0.5) +
+  geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.5) +
+  geom_polygon(data=mangrove_df,aes(x=long,y=lat,group=group),fill="red",alpha=0.7) +
+   ylab("Latitude") +
+  xlab("Longitude") +
+  theme_bw() +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+ # ggtitle("Vava'u Aquaculture areas") +
+  coord_fixed(1.03) 
+ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/mangrove.png")
+
+
+  
 
 tonga_mangrove@data$CTYPE<-as.character(tonga_mangrove@data$CTYPE)
 tonga_mangrove_raster<-rasterize(tonga_mangrove,tonga_depth,field=5,progress='text')
@@ -686,12 +766,16 @@ eez.water <- EEZ_df %>%
   filter(hole == FALSE)
 
 base <- ggplot() + 
-  geom_polygon(data = eez.water,aes(x = long,y = lat,group = group), fill =  "lightblue", colour = "black", size = 0.07 , alpha = 0.5) +
-  geom_polygon(data = eez.land,aes(x = long,y = lat,group = group), fill =  "brown", colour = "black", size = 0.07) +
+  geom_polygon(data = water,aes(x = long,y = lat,group = group), fill =  "lightblue", colour = "black", size = 0.5 , alpha = 0.5) +
+  geom_polygon(data = land,aes(x = long,y = lat,group = group), fill =  "brown", colour = "black", size = 0.5) +
   theme(legend.position="none") +
   theme_bw() +
   xlab("Longitude") +
-  ylab("Latitude") 
+  ylab("Latitude") +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  coord_fixed(1.03) 
+  theme(plot.margin=grid:
  # coord_fixed(xlim =c(-85.5,-57.4),ylim = c(9.95,30))
 
 mangrove_df<-fortify(tonga_mangrove)
