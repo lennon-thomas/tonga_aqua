@@ -168,6 +168,7 @@ land<-EEZ_df %>%
    theme_bw() +
    scale_x_continuous(expand = c(0,0)) +
    scale_y_continuous(expand = c(0,0)) +
+   coord_fixed(1.03) +
   ggtitle("Minimum SST from 2008-2017")
   ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/min_sst.png")
  
@@ -181,7 +182,8 @@ land<-EEZ_df %>%
     theme_bw() +
     ggtitle("Maximum SST from 2008-2017") +
     scale_x_continuous(expand = c(0,0)) +
-    scale_y_continuous(expand = c(0,0))
+    scale_y_continuous(expand = c(0,0)) +
+    coord_fixed(1.03) 
   ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/max_sst.png")
   
   ggplot() +
@@ -194,7 +196,8 @@ land<-EEZ_df %>%
     theme_bw() +
     ggtitle("Average SST from 2008-2017")  +
     scale_x_continuous(expand = c(0,0)) +
-    scale_y_continuous(expand = c(0,0))
+    scale_y_continuous(expand = c(0,0)) +
+    coord_fixed(1.03) 
   ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/average_sst.png")
   
   

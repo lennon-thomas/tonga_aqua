@@ -32,7 +32,7 @@ writeOGR(vavau, dsn = paste0(boxdir,"/data/tmp"), driver="ESRI Shapefile",layer 
 
 # Crop global datasets from carib_aqua project to Tonga and save ----------
 
-if (prep_data == TRUE){
+#if (prep_data == TRUE){
 
 eez<-readOGR(dsn = paste0(boxdir,"/data/raw/World_EEZ_v10_20180221"),layer="eez_v10",stringsAsFactors=FALSE)
 
@@ -46,7 +46,7 @@ eez_name<-"Tongan Exclusive Economic Zone"
 tonga_eez<- eez[eez$GeoName %in% eez_name,]
 
 
-ext<-c( -174.2542, -173.79, -18.97, -18.15) #-18.5
+ext<-c( -174.2542, -173.79, -18.97, -18.5)#-18.15) #-18.5
     
 vavau_eez<-crop(tonga_eez,ext)
 
@@ -90,18 +90,18 @@ vav_depth<-raster(paste0(boxdir,"/data/tmp/vav_depth.tif"))
 
 
 
-depth_df<-as_data_frame(rasterToPoints(vav_depth)) %>%
-  mutate(depth2 = gebco_depth *-1)
+depth_df<-as_data_frame(rasterToPoints(vav_depth)) 
 
 ggplot() +
-  geom_raster(data=depth_df,aes(x=x,y=y,fill = gebco_depth),title="Depth (m)")+
+  geom_raster(data=depth_df,aes(x=x,y=y,fill = vav_depth),title="Depth (m)")+
   scale_fill_continuous("Depth (m)")+#,low="lightblue",high="navy") +
   geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) + 
   xlab("Longitude") +
   ylab("Latitude") +
   theme_bw() +
   scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0))
+  scale_y_continuous(expand = c(0,0))+
+  coord_fixed(1.03) 
  
 ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/depth.png")
 
@@ -130,7 +130,8 @@ ggplot() +
   ylab("Latitude") +
   theme_bw() +
   scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0))
+  scale_y_continuous(expand = c(0,0)) +
+  coord_fixed(1.03) 
 
 ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/coral.png")
 rm(coral)
@@ -170,7 +171,8 @@ ggplot() +
   ylab("Latitude") +
   theme_bw() +
   scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0))
+  scale_y_continuous(expand = c(0,0))+
+  coord_fixed(1.03) 
 ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/mangrove.png")
 
 rm(mangrove)
@@ -200,7 +202,8 @@ ggplot() +
   ylab("Latitude") +
   theme_bw() +
   scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0))
+  scale_y_continuous(expand = c(0,0)) +
+  coord_fixed(1.03) 
 
 ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/benthic_habitat.png")
 
@@ -251,7 +254,8 @@ ggplot() +
   scale_y_continuous(expand = c(0,0)) +
   ggtitle("Max Salinity (ppt)") +
   scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0))
+  scale_y_continuous(expand = c(0,0)) +
+  coord_fixed(1.03) 
 
 ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/max_salinity.png")
 
@@ -271,7 +275,8 @@ ggplot() +
   theme_bw() +
   ggtitle("Min Salinity (ppt)") +
   scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0))
+  scale_y_continuous(expand = c(0,0)) +
+  coord_fixed(1.03) 
 
 ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/min_salinity.png")
 
@@ -292,7 +297,8 @@ ggplot() +
   theme_bw() +
   scale_x_continuous(expand = c(0,0)) +
   scale_y_continuous(expand = c(0,0)) +
-  ggtitle("Average Salinity (ppt)")
+  ggtitle("Average Salinity (ppt)") +
+  coord_fixed(1.03) 
 ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/mean_salinity.png")
 
 
@@ -307,6 +313,8 @@ vav_storm_l<-crop(storm_shape,ext)
 writeOGR(vav_storm_l,dsn=paste0(boxdir,"/data/tmp/storms"),driver="ESRI Shapefile",layer="vav_storms")
 
 vav_storm_l<-readOGR(dsn = paste0(boxdir,"/data/tmp/storms"), layer = "vav_storms")
+
+vav_storm_l<-crop(vav_storm_l,ext)
 
 tidy_storml<-tidy(vav_storm_l)
 
@@ -339,7 +347,8 @@ ggplot() +
   ylab("Latitude") +
   theme_bw() +
   scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0))
+  scale_y_continuous(expand = c(0,0)) +
+  coord_fixed(1.03) 
 ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/storms.png")
 
 
@@ -459,7 +468,8 @@ ggplot() +
   theme_bw() +
   scale_x_continuous(expand = c(0,0)) +
   scale_y_continuous(expand = c(0,0)) +
-  ggtitle("Vava'u Aquaculture areas")
+  ggtitle("Vava'u Aquaculture areas") +
+  coord_fixed(1.03) 
   ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/aqua_areas.png")
 
 
@@ -508,7 +518,8 @@ chl<-
   theme_bw() +
   scale_x_continuous(expand = c(0,0)) +
   scale_y_continuous(expand = c(0,0)) +
-  ggtitle("Average from 2017")
+  ggtitle("Average from 2017") +
+  coord_fixed(1.03) 
 
 pop<-
 ggplot()+
@@ -521,7 +532,8 @@ ggplot()+
   xlab("Longitude") +
   theme_bw() +
   scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0))
+  scale_y_continuous(expand = c(0,0)) +
+  coord_fixed(1.03) 
 
 
 ggarrange(pop,chl)
@@ -531,31 +543,6 @@ ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquacu
 
 
 
-ggplot()+
-  geom_polygon(data=water,aes(x=lat,y=long,group=group),fill="lightblue",alpha=0.5)+
-  geom_raster(data=village_pop,aes(x=lat,y=long,group=group,fill="T_Pop"),color="black")+
- # geom_point(data=village_pop,aes(x=lat))
-  ylab("Latitude") +
-  xlab("Longitude") +
-  theme_bw() +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0))
-
-
-
-crs(test)<-repro
-ggplot() + 
-  geom_polygon(data = vav_habitat_df, aes(x = long, y = lat, group = group), colour = "black") +
-  scale_fill_discrete(name ="Habitat Type") +
-  theme_void() +
-  geom_polygon(data = all_aqua,aes(x=long,y=lat,group=group),fill="yellow")
-
-
-ggplot() + 
-  geom_polygon(data = village_df, aes(x = long, y = lat, group = group, fill = log_T_Pop), colour = "black") +
-  scale_fill_continuous(name ="log(Population)") +
-  theme_void() +
-  geom_polygon(data = vavau_eez,aes(x=long,y=lat,group=group),fill=NA,col="black")
 
 
 wave<-brick(paste0(boxdir,"/data/raw/ssha_swh_5day_mean.nc"))
@@ -601,9 +588,46 @@ tonga_mangrove_raster<-mask(tonga_mangrove_raster,tonga_depth,maskvalue=NA,inver
 writeRaster(tonga_seagrasse_raster, paste0(boxdir,"/data/tmp/tonga_seagrass_raster.tif"))
 
 
+# waves -------------------------------------------------------------------
+
+wave<-brick(paste0(boxdir,"/data/raw/wave/mean_wave_height"))
+
+wave[wave==32767]<-NA
+
+wave[wave==-32767]<-NA
+
+max_wave<-calc(wave, function(x){max(x)})
+
+min_wave<-calc(wave, function(x){min(x)})
 
 
+re_max_wave<-resample(max_wave,vav_depth,method="bilinear")
+re_min_wave<-resample(min_wave,vav_depth,method="bilinear")
 
+max_wave_df<-as_data_frame(rasterToPoints(re_max_wave))
+min_wave_df<-as_data_frame(rasterToPoints(re_min_wave))
+
+
+cr_max_wave<-crop(re_max_wave,mangrove_ext)
+
+cr_min_wave<-crop(re_min_wave,mangrove_ext)
+
+cr_wave_df<-as_data_frame(rasterToPoints(cr_max_wave))
+
+cr_wave_df<-as_data_frame(rasterToPoints(cr_min_wave))
+cr_base
+
+ggplot()+
+  geom_raster(data=cr_wave_df,aes(x=x,y=y,fill=layer)) +
+  scale_fill_viridis("Min mean wave height (m)")+
+  geom_polygon(data=cr_land,aes(x=long,y=lat,group=group), fill="white",col="black",line=0.8) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  theme_bw() +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0))
+
+ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/min_wave_zoom.png")
 
 
 } else {
@@ -615,6 +639,34 @@ tonga_mangrove<-readOGR(dsn=paste0(boxdir,"/data/tmp"),layer="tonga_mangrove")
   
 }
 
+
+# curren --------------------------------------------------------------------
+
+max_current<-raster(paste0(boxdir,"/data/raw/current/max.tif"))
+min_current<-raster(paste0(boxdir,"/data/raw/current/min.tif"))
+mean.current<-raster(paste0(boxdir,"/data/raw/current/mean.tif"))
+
+current<-stack(max_current,min_current,mean.current)
+
+vav_current<-crop(current,ext)
+vav_current<-resample(vav_current,vav_depth)
+#vav_current<-crop(vav_current,mangrove_ext)
+vav_current_df<-as_data_frame(rasterToPoints(vav_current))
+
+    
+ggplot()+
+  geom_raster(data=vav_current_df,aes(x=x,y=y,fill=Present.Surface.Current.Velocity.Min)) +
+  scale_fill_viridis("Min surface current velocity (m-1)")+
+  geom_polygon(data=land,aes(x=long,y=lat,group=group), fill="white",col="black",line=0.8) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  theme_bw() +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  coord_fixed(1.03) +
+  theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
+
+ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/min_current.pdf")
 
 
 # plots -------------------------------------------------------------------

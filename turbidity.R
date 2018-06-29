@@ -150,7 +150,8 @@ ggplot() +
   theme_bw() +
   scale_x_continuous(expand = c(0,0)) +
   scale_y_continuous(expand = c(0,0)) +
-  ggtitle("Minimum Kd_490 from 2008-2017")
+  ggtitle("Minimum Kd_490 from 2008-2017") +
+  coord_fixed(1.03) 
 ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/min_kd_490.png")
 
 
@@ -163,7 +164,8 @@ ggplot() +
   theme_bw() +
   ggtitle("Maximum Kd_490 from 2008-2017") +
   scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0))
+  scale_y_continuous(expand = c(0,0)) +
+  coord_fixed(1.03) 
 ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/max_Kd_490.png")
 
 ggplot() +
@@ -176,6 +178,7 @@ ggplot() +
   theme_bw() +
   ggtitle("Average Kd_490 from 2008-2017")  +
   scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0))
+  scale_y_continuous(expand = c(0,0)) +
+  coord_fixed(1.03) 
 ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/average_Kd_490.png")
 
