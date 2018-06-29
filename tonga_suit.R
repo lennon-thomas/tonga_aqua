@@ -404,7 +404,7 @@ oloua<- Polygon(coords[c(5:8),])
 otea<- Polygon(coords[c(9:12),])
 otumoto<- Polygon(coords[c(13:16),])
 pangamotu<- Polygon(coords[c(17:20),])
-toku<- Polygon(coords[c(21:24),])
+#toku<- Polygon(coords[c(21:24),])
 koko<- Polygon(coords[c(25:28),])
 bay_vv<- Polygon(coords[c(29:32),])
 bay_vv2<- Polygon(coords[c(33:36),])
@@ -431,7 +431,7 @@ otumoto<-Polygons(list(otumoto),"Otumotu hahake Vv")
 
 pangamotu<-Polygons(list(pangamotu), "Pangamotu Vv")
 
-toku<-Polygons(list(toku),"Toku Is")
+#toku<-Polygons(list(toku),"Toku Is")
 
 koko<-Polygons(list(koko),"Koko Bay Vv")
 
@@ -461,19 +461,22 @@ vaipua3<-Polygons(list(vaipua3),"Vaipua3")
 
 tuanuku<-Polygons(list(tuanuku),"Tuanuku lakes")
 
-all_aqua<-SpatialPolygons(list(mounu,oloua,otea,otumoto,pangamotu,toku,koko,bay_vv,bay_vv2,matamaka,utungake,utungake2,
+all_aqua<-SpatialPolygons(list(mounu,oloua,otea,otumoto,pangamotu,koko,bay_vv,bay_vv2,matamaka,utungake,utungake2,
                                aloitalau,holeva,feletoa,vaipua1,vaipua2,vaipua3,tuanuku))
 
+r<-c("Utungake3","Toku")
 names<-as.data.frame(as.character(unique(aqua_df$Area)))%>%
-  dplyr::filter(!as.character(unique(aqua_df$Area))==  "Utungake3")
+  dplyr::filter(!as.character(unique(aqua_df$Area)) %in% r)
+ # dplyr::filter(!as.character(unique(aqua_df$Area))==  "Utungake3") %>%
+  #dplyr::filter(!as.character(unique(aqua_df$Area))==  "Toku") 
 
-row.names(names)<-c("Mounu Is","Oloua","Otea","Otumotu hahake Vv","Pangamotu Vv","Toku Is","Koko Bay Vv","Bay of Vv","Bay of Vv2",
+row.names(names)<-c("Mounu Is","Oloua","Otea","Otumotu hahake Vv","Pangamotu Vv","Koko Bay Vv","Bay of Vv","Bay of Vv2",
                     "Matamaka", "Utungake1","Utungake2", "Aloitalau","Holeva","Feletoa", "Vaipua1","Vaipua2","Vaipua3","Tuanuku lakes")                
 
 crs(all_aqua)<-repro
 
 aqua_area_df<-SpatialPolygonsDataFrame(all_aqua,names)
-
+aqua_area_df<-crop(all_aqua,ext)
 writeOGR(aqua_area_df,dsn=paste0(boxdir,"/data/tmp"),driver = "ESRI Shapefile",layer="aqua_areas",overwrite=TRUE)
 
 

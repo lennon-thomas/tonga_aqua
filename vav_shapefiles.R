@@ -103,8 +103,23 @@ whale_df<-tidy(whale)
 temp_df<-whale@data
 whale_df<-merge(whale_df,temp_df,by.x="id",by.y="Id")
 
-cr_base+
-  geom_polygon(data=whale_df,aes(x=long,y=lat,group=group),fill="purple",alpha=0.5)
+p<-ggplot()+
+  geom_polygon(data=water,aes(x=long,y=lat,group=group),fill="lightblue",alpha=0.5) +
+  geom_raster(data=suit_df,aes(x=x,y=y,fill = as.factor(index_1)),show.legend = TRUE,na.rm=TRUE,alpha =0.8)+
+  geom_polygon(data=whale_df,aes(x=long,y=lat,group=group,fill=id),alpha=0.5,show.legend=TRUE) +
+  scale_fill_manual(values=c("0"="purple","4"="red"),name="",label=c("Mother/calf humpback habitat","Suitable giant clam mariculture area"))+
+ # scale_fill_continuous("Suitable Giant Clam Area",low="blue",high="red") +
+  
+  geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.5) + 
+  xlab("Longitude") +
+  ylab("Latitude") +
+  theme_bw() +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  coord_fixed(1.03) 
+p+  guides(fill = guide_legend(override.aes = list(alpha = c(0.5,0.8))))
+  
+ 
 
 ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/whale.png")
 
@@ -146,17 +161,32 @@ rec<-readOGR(dsn=paste0(boxdir,"/data/VAV_Shapefiles"),layer="Recreation")
 
 rec_df<-as_data_frame(rec) %>%
   mutate(Activity="Recreation") %>%
-  select(coords.x1,coords.x2,Activity)
+  select(coords.x1,coords.x2,Activity) %>%
+  
 
 ggsave()
-activity<-rbind(dive_df,hotel_df,rec_df)
+activity<-rbind(dive_df,hotel_df,rec_df) %>%
+  filter(Activity!="Hotel")
 
-cr_base+
-  geom_point(data=activity,aes(x=coords.x1,y=coords.x2,shape=Activity,color=Activity),size=2.5)+
-  scale_shape_manual(name="",labels=c("Popular dive sites","Hotels","Recreation areas"),values=c(9,20,17)) +
-  scale_color_manual(name="",labels=c("Popular dive sites","Hotels","Recreation areas"),values=c("#F8766D","#7CAE00","#C77CFF"))
+g<-ggplot()+
+geom_polygon(data=water,aes(x=long,y=lat,group=group),fill="lightblue",alpha=0.5) +
+  geom_raster(data=suit_df,aes(x=x,y=y,fill = as.factor(index_1)),show.legend = TRUE,na.rm=TRUE,alpha=0.5)+
 
-ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/marine_activities.png")
+  geom_polygon(data=tidy_fishing,aes(x=long,y=lat,group=group,fill=piece),show.legend=TRUE,alpha=0.5)+
+ scale_fill_manual(values=c("1"="navy","4"="red"),name="",label=c("Community fishing areas","Suitable giant clam mariculture area"))+
+  geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.5) + 
+  geom_point(data=activity,aes(x=coords.x1,y=coords.x2,shape=Activity,color=Activity),size=3)+
+  scale_shape_manual(name="",labels=c("Popular dive sites","Recreation areas"),values=c(17,20)) +
+  scale_color_manual(name="",labels=c("Popular dive sites","Recreation areas"),values=c("red","green")) +
+  xlab("Longitude") +
+  ylab("Latitude") +
+  theme_bw() +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  coord_fixed(1.03) 
+g+  guides(fill = guide_legend(override.aes = list(alpha = c(0.5,0.5))))
+  
+ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/giant_clam/marine_activities.png")
 
 
 

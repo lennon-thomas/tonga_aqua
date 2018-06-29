@@ -14,8 +14,8 @@ file.exists("MODISA_pk.csv") # caution! new data will be appended to this file i
 # file.remove("MODISA_sst.csv")
 
 # list and remove objects from workspace
-ls()
-rm(list = ls())
+#ls()
+#rm(list = ls())
 
 # create a list of nc files and indicate its length
 f <- list.files(".", pattern="*.Kd_490_4km.nc",full.names=F)
@@ -141,44 +141,51 @@ max_kd_df<-as_data_frame(rasterToPoints(max_kd))
 avg_kd_df<-as_data_frame(rasterToPoints(average_kd)) 
 
 #Plot
-ggplot() +
+min_kd_plot<-
+  ggplot() +
   geom_raster(data=min_kd_df,aes(x=x,y=y,fill = min_kd))+
   scale_fill_continuous("Kd_490 m^-1",low="yellow",high="darkred") +
   geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
-  xlab("Longitude") +
+  xlab("") +
   ylab("Latitude") +
   theme_bw() +
   scale_x_continuous(expand = c(0,0)) +
   scale_y_continuous(expand = c(0,0)) +
-  ggtitle("Minimum Kd_490 from 2008-2017") +
+#  ggtitle("Minimum Kd_490 from 2008-2017") +
   coord_fixed(1.03) 
 ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/min_kd_490.png")
 
 
-ggplot() +
+max_kd_plot<-ggplot() +
   geom_raster(data=max_kd_df,aes(x=x,y=y,fill = max_kd)) +
   scale_fill_continuous("Kd_490 m^-1",low="yellow",high="darkred") +
   geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
   xlab("Longitude") +
-  ylab("Latitude") +
+  ylab("") +
   theme_bw() +
-  ggtitle("Maximum Kd_490 from 2008-2017") +
+  #ggtitle("Maximum Kd_490 from 2008-2017") +
   scale_x_continuous(expand = c(0,0)) +
   scale_y_continuous(expand = c(0,0)) +
   coord_fixed(1.03) 
 ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/max_Kd_490.png")
 
-ggplot() +
+avg_kd_plot<-
+  ggplot() +
   geom_raster(data=avg_kd_df,aes(x=x,y=y,fill = average_kd))+
   #scale_fill_continuous("SST (C)",low="green",high="blue") +
   scale_fill_continuous("Pk_490 m^-1",low="yellow",high="darkred") +
   geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
-  xlab("Longitude") +
-  ylab("Latitude") +
+  xlab("") +
+  ylab("") +
   theme_bw() +
-  ggtitle("Average Kd_490 from 2008-2017")  +
+ # ggtitle("Average Kd_490 from 2008-2017")  +
   scale_x_continuous(expand = c(0,0)) +
   scale_y_continuous(expand = c(0,0)) +
   coord_fixed(1.03) 
 ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/average_Kd_490.png")
 
+
+ggarrange(min_kd_plot,max_kd_plot,avg_kd_plot,ncol=3,nrow=1,common.legend = FALSE,legend="top",
+          label.x=0,label.y=0)
+
+ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/all_kd490.png")

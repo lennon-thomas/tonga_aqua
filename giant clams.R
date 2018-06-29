@@ -49,8 +49,8 @@ base<-ggplot() +
 depth<-raster(paste0(boxdir,"/data/tmp/vav_depth.tif"))
 depth<-crop(depth,ext2)
 depth[depth>0]<-NA
-depth[depth<=-5]<-NA
-depth[depth>=-4]<-1
+depth[depth<=-6]<-NA
+depth[depth>=-5]<-1
 depth_area<-area(depth,na.rm=TRUE)
 
 depth_df<-as_data_frame(rasterToPoints(depth))
@@ -153,10 +153,21 @@ ggplot() +
   scale_x_continuous(expand = c(0,0)) +
   scale_y_continuous(expand = c(0,0))
 
+# Mangroves ---------------------------------------------------------------
+
+
+
+mangrove<-readOGR(dsn=paste0(boxdir,"/data/tmp"),layer='mangrove_shp')
+
+m_raster<-rasterize(mangrove,depth, field=0)
+
+m_raster[is.na(m_raster)]<-1
+
+m_df<-as_data_frame(rasterToPoints(m_raster))
 
 # Suitability -------------------------------------------------------------
 
-s_stack<-stack(depth,max_kd,habitat_raster,mang_raster)
+s_stack<-stack(depth,max_kd,habitat_raster,m_raster)
 
 suit<-stackApply(s_stack,indices=c(1,1,1,1), fun=sum,na.rm=TRUE)
 
@@ -170,7 +181,8 @@ total_suit<-sum(suit_area_df$layer)
   ggplot()+
     geom_polygon(data=water,aes(x=long,y=lat,group=group),fill="lightblue",alpha=0.5) +
     geom_raster(data=suit_df,aes(x=x,y=y,fill = index_1),show.legend = FALSE,na.rm=TRUE)+
-    geom_polygon(data=aqua_df,aes(x=long,y=lat,group=group),fill="navy",alpha=0.5) +
+  #  geom_raster(data=m_df,aes(x=x,y=y,layer=layer))+
+  #  geom_polygon(data=aqua_df,aes(x=long,y=lat,group=group),fill="navy",alpha=0.5) +
     scale_fill_continuous(low="blue",high="red") +
     geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.5) + 
     xlab("Longitude") +
@@ -179,20 +191,51 @@ total_suit<-sum(suit_area_df$layer)
     scale_x_continuous(expand = c(0,0)) +
     scale_y_continuous(expand = c(0,0)) +
     coord_fixed(1.03) +
-  ggtitle(paste0("Potentially suitable areas for giant clam aquaculture", round(total_suit,2)," km^2"))
-  ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/giant_clam/giant_clam_suitable.png")
+#  ggtitle(paste0("Potentially suitable areas for giant clam aquaculture ", round(total_suit,2)," km^2"))
+  ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/giant_clam/final_suitable.png")
   
+  aqua_df<-aqua_df%>%
+    mutate(fill_value=as.factor(5),
+           line_value=as.factor(6))
   
-aqua_area_df<-readOGR(dsn=paste0(boxdir,"/data/tmp"),layer='aqua_areas')
-aqua_area_df<-crop(aqua_area_df,ext2)
-tidy_aqua<-tidy(aqua_area_df)
+t<-  ggplot() +
+    geom_polygon(data=water,aes(x=long,y=lat,group=group),fill="lightblue",alpha=0.5) +
+    geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
+    geom_raster(data=suit_df,aes(x=x,y=y,fill = as.factor(index_1)),show.legend = TRUE,na.rm=TRUE,alpha=0.5)+
+  geom_polygon(data=aqua_df,aes(x=long,y=lat,group=group,fill=fill_value),col="navy",show.legend=TRUE,alpha=0.5) +
+  scale_fill_manual ("",values=c("4"="red","5"="navy"), labels=c("Suitable giant clam mariculture area","Designated Aquaculture Areas")) + 
+   
+ geom_polygon(data=ovaka_df,aes(x=long,y=lat,group=group,color=piece),show.legend = TRUE,size=2,fill=NA) +
+  scale_color_manual("",labels="Current SMAs",values=c("1"="darkgreen")) +
+   geom_point(data=pending_sma_df,aes(x=coords.x1,y=coords.x2,shape=Id),size=3,col="yellow",fill="white") +
+   
+   # 
+     #theme(legend.key = element_rect(fill = "white", colour = NA, size = 0.25))
+    scale_shape_manual("",labels="Pending SMAs",values=19) +
+   
+    # geom_text(data=aqua_labels,aes(x=long,y=lat,label=id),hjust=-1,vjust=-.5)+
+    ylab("Latitude") +
+    xlab("Longitude") +
+    theme_bw() +
+    scale_x_continuous(expand = c(0,0)) +
+    scale_y_continuous(expand = c(0,0)) +
+  #  ggtitle("Vava'u Aquaculture areas") +
+    coord_fixed(1.03) 
+# t+ theme(legend.key=element_rect(fill="lightblue" ,color="white"))
+  
 
+over<-gintersect(suit_df,aqua_df)
+plot(suit)
+plot(over,add=TRUE,col="red")
+plot(all_aqua,add=TRUE,col="blue")
+
+ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/giant_clam/aqua_areas.png")
 temp_df<-data.frame(aqua_area_df@data)
 temp_df$id<-row.names(temp_df)
 
 #temp_df$id<-row.names(temp_df)
 
-
+all_aqua<-crop(all_aqua,ext)
 aqua_df<-merge(tidy_aqua,temp_df,by="id") 
 names(aqua_df)<-c("id","long","lat","order","hole","piece","group","Name")
 
@@ -200,52 +243,3 @@ names(aqua_df)<-c("id","long","lat","order","hole","piece","group","Name")
 
 
 
-# Mangroves ---------------------------------------------------------------
-
-mangrove<-readOGR(dsn=paste0(boxdir,"/data/VAV_Shapefiles"),layer="Vavau magrove subset")
-repro<-"+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0 "
-mangrove<-spTransform(mangrove,repro)
-
-mang_raster<-rasterize(mangrove,depth,field=0,snap="out")
-mang_raster<-crop(mang_raster,ext2)
-mang_raster[is.na(mang_raster)]<-1
-mang.df<-as_data_frame(rasterToPoints(mang_raster))
-
-mangrove_df<-tidy(vav_mangrove)
-temp_df<-vav_mangrove@data
-temp_df$id<-row.names(temp_df)
-
-mangrove_df<-merge(mangrove_df,temp_df)
-
-vavau_eez<-readOGR(dsn=paste0(boxdir,"/data/tmp"), layer ="vavau_eez_shape")
-
-cr_vavu_eez<-crop(vavau_eez,mangrove_ext)
-
-tidy_eez<-tidy(cr_vavu_eez)
-
-temp_df<-data.frame(cr_vavu_eez@data)
-
-temp_df$id<-row.names(temp_df)
-
-EEZ_df<-merge(tidy_eez,temp_df,by="id")
-
-cr_land<-EEZ_df %>%
-  dplyr::filter(hole==TRUE)
-
-cr_water<-EEZ_df %>%
-  dplyr::filter(hole==FALSE)
-
-cr_base<-ggplot() +
-  geom_polygon(data = cr_water, aes(x=long, y=lat, group=group),fill =  "lightblue", alpha = 0.5, size = 0.5) + 
-  geom_polygon(data = cr_land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.5) + 
-  xlab("Longitude") +
-  ylab("Latitude") +
-  theme_bw() +
-  scale_x_continuous(expand = c(0,0)) +
-  scale_y_continuous(expand = c(0,0))
-
-cr_base +
-  geom_polygon(data=mangrove_df,aes(x=long,y=lat,group=group),fill="red")
-ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/mangroves.png")
-
-vav_mangrove_raster<-rasterize(vav_mangrove,vav_depth,field=1)
