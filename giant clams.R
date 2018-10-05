@@ -53,8 +53,8 @@ depth[depth<=-6]<-NA
 depth[depth>=-5]<-1
 depth_area<-area(depth,na.rm=TRUE)
 
-depth_df<-as_data_frame(rasterToPoints(depth))
-depth_area_df<-as_data_frame(rasterToPoints(depth_area))
+depth_df<-as.data.frame(rasterToPoints(depth))
+depth_area_df<-as.data.frame(rasterToPoints(depth_area))
 t_depth_area<-sum(depth_area_df$layer,na.rm=TRUE)
 
 ggplot()+
@@ -79,13 +79,13 @@ max_kd<-raster(paste0(boxdir,"/data/raw/pk/max_kd.tif"))
 max_kd<-crop(max_kd,ext2)
 max_kd[max_kd>=0.101]<-NA
 kd_area<-area(max_kd,na.rm=TRUE)
-max_kd_df<-as_data_frame(rasterToPoints(max_kd)) 
-area_kd_df<-as_data_frame(rasterToPoints(kd_area))
+max_kd_df<-as.data.frame(rasterToPoints(max_kd)) 
+area_kd_df<-as.data.frame(rasterToPoints(kd_area))
 t_kd_area<-sum(area_kd_df$layer)
 
 ggplot()+
   geom_polygon(data=water,aes(x=long,y=lat,group=group),fill="lightblue",alpha=0.5) +
-  geom_raster(data=max_kd_df,aes(x=x,y=y,fill = max_kd),title="Depth (m)",na.rm=TRUE)+
+  geom_raster(data=max_kd_df,aes(x=x,y=y,fill = max_kd),na.rm=TRUE)+
   scale_fill_continuous("SST (m)",low="yellow",high="darkred") +
   geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.5) + 
   xlab("Longitude") +
@@ -122,8 +122,8 @@ vav_habitat_df<-merge(tidy_habitat,temp_df,by="id")
 habitat_raster<-rasterize(vav_habitat,depth, field=1)
 area_habitat<-area(habitat_raster,na.rm = TRUE)
 
-habitat_raster_df<-as_data_frame(rasterToPoints(habitat_raster))
-area_habitat_df<-as_data_frame(rasterToPoints(area_habitat))
+habitat_raster_df<-as.data.frame(rasterToPoints(habitat_raster))
+area_habitat_df<-as.data.frame(rasterToPoints(area_habitat))
 
 t_habitat_area<-sum(area_habitat_df$layer)
 ggplot() +
@@ -136,7 +136,7 @@ ggplot() +
   theme_bw() +
   scale_x_continuous(expand = c(0,0)) +
   scale_y_continuous(expand = c(0,0)) +
-  ggtitle(paste0("Suitable benthic areas for giant clam mariculture: ",round(t_habitat_area,2)," km^2")) +
+  ggtitle(paste0("Suitable benthic areas for giant clam mariculture: ",round(t_habitat_area,2)," km^2")) 
 
 
 ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/giant_clam/benthic_habitat.png")
@@ -163,7 +163,7 @@ m_raster<-rasterize(mangrove,depth, field=0)
 
 m_raster[is.na(m_raster)]<-1
 
-m_df<-as_data_frame(rasterToPoints(m_raster))
+m_df<-as.data.frame(rasterToPoints(m_raster))
 
 # Suitability -------------------------------------------------------------
 
@@ -171,12 +171,12 @@ s_stack<-stack(depth,max_kd,habitat_raster,m_raster)
 
 suit<-stackApply(s_stack,indices=c(1,1,1,1), fun=sum,na.rm=TRUE)
 
-
+proj4string(suit)<-"+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0"
 
 suit[suit<4]<-NA
 suit_area<-area(suit,na.rm = TRUE)
-suit_df<-as_data_frame(rasterToPoints(suit))
-suit_area_df<-as_data_frame(rasterToPoints(suit_area))
+suit_df<-as.data.frame(rasterToPoints(suit))
+suit_area_df<-as.data.frame(rasterToPoints(suit_area))
 total_suit<-sum(suit_area_df$layer)
   ggplot()+
     geom_polygon(data=water,aes(x=long,y=lat,group=group),fill="lightblue",alpha=0.5) +
@@ -193,25 +193,73 @@ total_suit<-sum(suit_area_df$layer)
     coord_fixed(1.03) +
 #  ggtitle(paste0("Potentially suitable areas for giant clam aquaculture ", round(total_suit,2)," km^2"))
   ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/giant_clam/final_suitable.png")
+ 
+  aqua<-readOGR(dsn=paste0(boxdir,"/data/tmp"),layer = "aqua_areas")
+aqua_raster<-rasterize(aqua,depth)
+aqua_raster[aqua_raster>0]<-1
+
+
+over<-stack(aqua_raster,suit)
+over2<-stackApply(over,indices=c(1,1),fun="sum",na.rm=TRUE)
+  aqua_overlap<-intersect(suit,aqua_raster)
+    
+  tidy_aqua<-tidy(aqua)
   
+  temp_df<-data.frame(aqua@data)
+  temp_df$id<-row.names(temp_df)
+  
+
+  
+  
+   
+ 
+  
+  aqua_df<-merge(tidy_aqua,temp_df,by="id") 
+  names(aqua_df)<-c("id","long","lat","order","hole","piece","group","Name")
   aqua_df<-aqua_df%>%
     mutate(fill_value=as.factor(5),
            line_value=as.factor(6))
+  aqua_labels<-aqua_df %>%
+    dplyr:: select(id,long,lat) %>%
+    dplyr:: group_by(id) %>%
+    dplyr::top_n(1,wt=long)
   
+  
+  
+sma1<-readOGR(dsn=paste0(boxdir,"/data/SMAs"),layer="SMA_2016")  
+sma1<-crop(sma1,suit)
+tidy_sma1<-tidy(sma1)
+sma1_temp<-as.data.frame(sma1) 
+sma1_temp$id<-row.names(sma1_temp)  
+sma1_df<-merge(sma1_temp,tidy_sma1,by="id")
+
+
+sma_vav<-readOGR(dsn=paste0(boxdir,"/data"),layer="Protected_Areas_all_types")
+sma_vav<-crop(sma_vav,suit)
+tidy_sma1<-tidy(sma_vav)
+sma1_temp<-as.data.frame(sma_vav) 
+sma1_temp$id<-row.names(sma1_temp)  
+sma1_df<-merge(sma1_temp,tidy_sma1,by="id")
+
+
+
 t<-  ggplot() +
     geom_polygon(data=water,aes(x=long,y=lat,group=group),fill="lightblue",alpha=0.5) +
     geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
-    geom_raster(data=suit_df,aes(x=x,y=y,fill = as.factor(index_1)),show.legend = TRUE,na.rm=TRUE,alpha=0.5)+
+  geom_polygon(data=sma1_df,aes(x=long,y=lat,group=group,color=Status,fill=Status),show.legend = TRUE,size=0.95,alpha=0) +
+ scale_color_manual("SMAs",labels=c("Existing","Proposed"),values=c("Existing"="darkgreen","Proposed"="yellow")) +
+  scale_fill_manual("",labels=c("Suitable giant clam mariculture area","Designated Aquaculture Areas","Existing  SMA","Proposed SMA"),values=c("Existing"="darkgreen","Proposed"="yellow","4"="red","5"="navy")) +
+  geom_raster(data=suit_df,aes(x=x,y=y,fill = as.factor(index_1)),show.legend = TRUE,na.rm=TRUE,alpha=0.5)+
   geom_polygon(data=aqua_df,aes(x=long,y=lat,group=group,fill=fill_value),col="navy",show.legend=TRUE,alpha=0.5) +
-  scale_fill_manual ("",values=c("4"="red","5"="navy"), labels=c("Suitable giant clam mariculture area","Designated Aquaculture Areas")) + 
-   
- geom_polygon(data=ovaka_df,aes(x=long,y=lat,group=group,color=piece),show.legend = TRUE,size=2,fill=NA) +
-  scale_color_manual("",labels="Current SMAs",values=c("1"="darkgreen")) +
-   geom_point(data=pending_sma_df,aes(x=coords.x1,y=coords.x2,shape=Id),size=3,col="yellow",fill="white") +
+ # scale_fill_manual ("",values=c(), labels=c("Suitable giant clam mariculture area","Designated Aquaculture Areas")) + 
+  
+ #geom_polygon(data=ovaka_df,aes(x=long,y=lat,group=group,color=piece),show.legend = TRUE,size=2,fill=NA) +
+  #scale_color_manual("",labels="Current SMAs",values=c("1"="darkgreen")) +
+   #geom_point(data=pending_sma_df,aes(x=coords.x1,y=coords.x2,shape=Id),size=3,col="yellow",fill="white") +
    
    # 
      #theme(legend.key = element_rect(fill = "white", colour = NA, size = 0.25))
-    scale_shape_manual("",labels="Pending SMAs",values=19) +
+    #scale_shape_manual("",labels="Pending SMAs",values=19) +
    
     # geom_text(data=aqua_labels,aes(x=long,y=lat,label=id),hjust=-1,vjust=-.5)+
     ylab("Latitude") +
