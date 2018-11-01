@@ -52,6 +52,8 @@ vavau_eez<-crop(tonga_eez,ext)
 
 writeOGR(vavau_eez, dsn=paste0(boxdir,"/data/tmp"),driver="ESRI Shapefile", layer="vavau_eez_shape",overwrite = TRUE)
 
+rm(eez)
+#start here
 vavau_eez<-readOGR(dsn=paste0(boxdir,"/data/tmp"), layer ="vavau_eez_shape")
 
 tidy_eez<-tidy(vavau_eez)
@@ -67,7 +69,7 @@ land<-EEZ_df %>%
 
 water<-EEZ_df %>%
   dplyr::filter(hole==FALSE)
-rm(eez)
+
 #data from https://dusk.geo.orst.edu/tonga/mgr/
 #depth2<-raster(paste0(boxdir,"/data/raw/map2mgr.grd"))
 
@@ -83,12 +85,13 @@ vav_depth<-crop(depth,ext)
 
 #vav_depth[zero_value]<-0
 
-writeRaster(vav_depth,paste0(boxdir,"/data/tmp/vav_depth.tif"),overwrite = TRUE)
+#writeRaster(vav_depth,paste0(boxdir,"/data/tmp/vav_depth.tif"),overwrite = TRUE)
 
 vav_depth<-raster(paste0(boxdir,"/data/tmp/vav_depth.tif"))
 #Plot
 
-
+vav_depth[vav_depth<=-6]<-NA
+vav_depth[vav_depth>=1]<-NA
 
 depth_df<-dplyr::as_data_frame(rasterToPoints(vav_depth)) 
 
@@ -107,9 +110,20 @@ ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquacu
 
 rm(depth)
 # data from http://datadownload.unep-wcmc.org
+
+
 coral<- readOGR(dsn = paste0(boxdir, "/data/raw/14_001_WCMC008_CoralReefs2010_v3/01_Data"),layer = "WCMC008_CoralReef2010_Py_v3")
 
+repro2<-"+proj=tmerc +lat_0=0 +lon_0=-177 +k=0.9996 +x_0=1500000 +y_0=5000000 +ellps=GRS80 +units=m +no_defs"
+
+
 tonga_coral<-crop(coral,ext)
+
+coral_sp<-spTransform(tonga_coral,repro2)
+
+coral_sp_buff<-gBuffer(coral_sp,width=100,byid=TRUE)
+
+tonga_coral<-spTransform(coral_sp_buff,repro)
 
 tonga_coral_raster<-rasterize(tonga_coral,vav_depth,field=2,progress='text')
 
@@ -150,7 +164,7 @@ tonga_mangrove_raster[is.na(tonga_mangrove_raster)]<-0
 
 writeRaster(tonga_mangrove_raster,paste0(boxdir,"/data/tmp/vav_mangrove_raster.tif"))
 
-mangrove_df<-as_data_frame(rasterToPoints(tonga_mangrove_raster))
+mangrove_df<-as.data.frame(rasterToPoints(tonga_mangrove_raster))
 
 
 tidy_mangrove<-tidy(tonga_mangrove)
@@ -628,7 +642,7 @@ tonga_mpa_raster<-resample(tonga_mpa_raster,tonga_depth,progress='text',filename
 # mangrove ----------------------------------------------------------------
 
 mangrove<-readOGR(dsn=paste0(boxdir,"/data/VAV_Shapefiles"),layer="Vavau magrove subset")
-buf_mangrove<-gBuffer(mangrove,width=250,byid = TRUE)
+buf_mangrove<-gBuffer(mangrove,width=100,byid = TRUE)
 t_mangrove<-spTransform(buf_mangrove,repro)
 final_mangrove<-crop(t_mangrove,vav_depth)
 
@@ -738,7 +752,7 @@ vav_current_df<-as_data_frame(rasterToPoints(vav_current))
 
     
 ggplot()+
-  geom_raster(data=vav_current_df,aes(x=x,y=y,fill=Present.Surface.Current.Velocity.Min)) +
+  geom_raster(data=vav_current_df,aes(x=x,y=y,fill=min)) +
   scale_fill_viridis("Min surface current velocity (m-1)")+
   geom_polygon(data=land,aes(x=long,y=lat,group=group), fill="white",col="black",line=0.8) +
   xlab("Longitude") +
@@ -749,7 +763,7 @@ ggplot()+
   coord_fixed(1.03) +
   theme(plot.margin=grid::unit(c(0,0,0,0), "mm"))
 
-ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/min_current.pdf")
+ggsave("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/plots/min_current.png")
 
 
 # plots -------------------------------------------------------------------

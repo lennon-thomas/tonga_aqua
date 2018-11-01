@@ -26,15 +26,15 @@ latmax=-18.15
 latmin=-18.95
 #ext<-c( -174.2542, -173.79, -18.95, -18.15) # -18.56295
 # create a list of files and indicate its length
-f <- list.files(".", pattern="*.L3m_MO_SST4_sst4_4km.nc",full.names=F)
+f <- list.files(".", pattern="*.L3m_MO_SST_sst_4km.nc",full.names=F)
 
-allsst<-lapply(f,brick)
+#allsst<-lapply(f,brick)
 
-tonga_sst<-crop(allsst[[1]],ext)
-(lf<-length(f))
+#tonga_sst<-crop(allsst[[1]],ext)
+#(lf<-length(f))
 
 # variable
-var<-"sst4" 
+var<-"sst" 
 
 for (i in 1:lf) {
   # progress indicator
@@ -67,11 +67,11 @@ for (i in 1:lf) {
   # close connection
   nc_close(data)
   # clean workspace
-  rm(data,lon,lat,value,unit,dat.var,dat.varSAtmp,dateini,dateend,datemean,year,month,dat.varSA,fe)
+#  rm(data,lon,lat,value,unit,dat.var,dat.varSAtmp,dateini,dateend,datemean,year,month,dat.varSA,fe)
 }
 rm(var,f,i,latmax,latmin,lf,lonmax,lonmin)
 
-sst<-read_csv("MODISA_sst.csv")
+sst<-read_csv("/Users/lennonthomas/Box Sync/Waitt Institute/Blue Halo 2018/Vavau/Aquaculture/data/raw/sst/MODISA_sst.csv")
 
 ##Salinity
 

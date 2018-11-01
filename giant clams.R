@@ -246,7 +246,7 @@ sma1_df<-merge(sma1_temp,tidy_sma1,by="id")
 t<-  ggplot() +
     geom_polygon(data=water,aes(x=long,y=lat,group=group),fill="lightblue",alpha=0.5) +
     geom_polygon(data = land, aes(x=long, y=lat, group=group),fill =  "white", colour = "black", size = 0.8) +
-  geom_polygon(data=sma1_df,aes(x=long,y=lat,group=group,color=Status,fill=Status),show.legend = TRUE,size=0.95,alpha=0) +
+  geom_polygon(data=sma1_df,aes(x=long,y=lat,group=group,color=Location,fill=Location),show.legend = TRUE,size=0.95,alpha=0) +
  scale_color_manual("SMAs",labels=c("Existing","Proposed"),values=c("Existing"="darkgreen","Proposed"="yellow")) +
   scale_fill_manual("",labels=c("Suitable giant clam mariculture area","Designated Aquaculture Areas","Existing  SMA","Proposed SMA"),values=c("Existing"="darkgreen","Proposed"="yellow","4"="red","5"="navy")) +
   geom_raster(data=suit_df,aes(x=x,y=y,fill = as.factor(index_1)),show.legend = TRUE,na.rm=TRUE,alpha=0.5)+
